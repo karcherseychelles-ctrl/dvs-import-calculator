@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DVS International – Import Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#1B3A6B;--navy2:#162E56;--blue:#2E5FA3;--blt:#D6E4F7;--bmid:#B8CFF0;
+  --yellow:#FFD600;--ybg:#FFFBDD;
+  --white:#fff;--bg:#F3F6FB;--bg2:#EBF2FC;--bg3:#E0ECF8;
+  --brd:#C8D8EE;--brd2:#A8C0E0;
+  --txt:#1A2535;--txt2:#4A5D7A;--txt3:#8098B8;
+  --grn:#1D7A4A;--grnbg:#E6F7EF;--grnbd:#A8DFC0;
+  --red:#C0392B;--redbg:#FDECEA;
+  --oin:#FFF8E1;--obd:#FFD54F;
+  --purp:#5B4FCF;--purpbg:#EEEAFB;
+  --r:10px;--rl:14px;
+  --sh:0 2px 10px rgba(27,58,107,.08);--shl:0 8px 32px rgba(27,58,107,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:13px;line-height:1.5;min-height:100vh}
+a{color:var(--blue);text-decoration:none}
+input,select,textarea{font-family:inherit;font-size:12px;border:1px solid var(--brd);border-radius:6px;padding:5px 9px;background:var(--oin);color:var(--navy);outline:none;transition:border .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);background:#fff}
+button{font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;border:none;border-radius:7px;padding:6px 13px;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s,background .15s;white-space:nowrap}
+button:disabled{opacity:.4;cursor:not-allowed}
+.bn{background:var(--navy);color:#fff}.bn:hover:not(:disabled){background:var(--navy2)}
+.bb{background:var(--blue);color:#fff}.bb:hover:not(:disabled){background:var(--navy)}
+.by{background:var(--yellow);color:var(--navy)}.by:hover:not(:disabled){opacity:.85}
+.bg{background:transparent;color:var(--txt2);border:1px solid var(--brd)}.bg:hover:not(:disabled){background:var(--bg2)}
+.bgrn{background:var(--grnbg);color:var(--grn);border:1px solid var(--grnbd)}.bgrn:hover{background:#d4f0e3}
+.bred{background:var(--redbg);color:var(--red);border:1px solid #f5c6c2}.bred:hover{background:#f8d7d5}
+.bow{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.22)}.bow:hover{background:rgba(255,255,255,.2)}
+.bsm{padding:5px 10px;font-size:11px}
+.bxs{padding:3px 8px;font-size:10.5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ─── LOGIN ─── */
+#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--navy) 0%,#1e4fa3 100%);padding:20px}
+.lcard{background:#fff;border-radius:18px;padding:42px 36px;width:380px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.28);animation:fadein .3s ease}
+.llogo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center}
+.lbadge{background:var(--yellow);color:var(--navy);font-weight:700;font-size:17px;padding:5px 13px;border-radius:7px;letter-spacing:.3px}
+.ltitle{font-size:21px;font-weight:700;color:var(--navy)}
+.lsub{text-align:center;font-size:12px;color:var(--txt3);margin-bottom:22px;line-height:1.5}
+.lfield{margin-bottom:15px}
+.lfield label{display:block;font-size:10.5px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
+.lerr{background:var(--redbg);color:var(--red);border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:14px;display:none;align-items:center;gap:7px}
+.lbtn{width:100%;padding:11px;font-size:14px;justify-content:center;margin-top:6px;border-radius:9px}
+.lfooter{text-align:center;font-size:11px;color:var(--txt3);margin-top:18px;line-height:1.6}
+.ldivider{display:flex;align-items:center;gap:10px;margin:14px 0}
+.ldivider span{font-size:11px;color:var(--txt3);white-space:nowrap}
+.ldivider::before,.ldivider::after{content:'';flex:1;height:1px;background:var(--brd)}
+.gbtn{width:100%;padding:11px;font-size:13px;justify-content:center;border-radius:9px;background:#fff;color:#3c4043;border:1px solid var(--brd);font-weight:500;margin-top:0;gap:10px;cursor:pointer;transition:background .15s}
+.gbtn:hover{background:var(--bg2)}
+
+/* ─── APP ─── */
+#appWrap{display:none;flex-direction:column;height:100vh;overflow:hidden}
+header{background:var(--navy);height:54px;display:flex;align-items:center;gap:11px;padding:0 22px;flex-shrink:0;box-shadow:0 2px 12px rgba(27,58,107,.32);z-index:200}
+.hbadge{background:var(--yellow);color:var(--navy);font-weight:700;font-size:11px;padding:3px 8px;border-radius:5px}
+header h1{color:#fff;font-size:14px;font-weight:600;letter-spacing:-.2px}
+.hpill{background:rgba(255,255,255,.12);color:rgba(255,255,255,.6);font-size:10px;padding:2px 8px;border-radius:20px}
+.sdot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2.5s infinite;display:inline-block}
+.rbadge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:12px}
+.r-admin{background:#fee2e2;color:#991b1b}
+.r-manager{background:#fef3c7;color:#92400e}
+.r-staff{background:var(--grnbg);color:var(--grn)}
+.hright{margin-left:auto;display:flex;gap:8px;align-items:center}
+.uinfo{font-size:10.5px;color:rgba(255,255,255,.65);text-align:right;line-height:1.4}
+.uname{color:#fff;font-weight:500;font-size:11.5px}
+
+/* ─── BODY LAYOUT ─── */
+.abody{display:flex;flex:1;overflow:hidden;height:calc(100vh - 54px)}
+.sidebar{width:264px;min-width:264px;background:#fff;border-right:1px solid var(--brd);overflow-y:auto;display:flex;flex-direction:column;flex-shrink:0}
+.maincol{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sb-sec{padding:13px 14px;border-bottom:1px solid var(--brd)}
+.sbt{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--txt3);margin-bottom:10px}
+.sbf{margin-bottom:9px}
+.sbf label{display:block;font-size:10.5px;color:var(--txt2);font-weight:500;margin-bottom:3px}
+.sbf .hint{font-size:9.5px;color:var(--txt3);margin-top:2px;line-height:1.3}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.irow{display:flex;gap:5px}.irow input{flex:1}
+
+/* ─── UPLOAD ZONE ─── */
+.drop-zone{border:2px dashed var(--brd2);border-radius:var(--rl);padding:16px 10px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);position:relative;overflow:hidden}
+.drop-zone:hover,.drop-zone.dov{border-color:var(--blue);background:var(--blt)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fchip{display:flex;align-items:center;gap:7px;background:var(--blt);border:1px solid var(--brd2);border-radius:7px;padding:6px 9px;margin-top:8px;font-size:11px}
+.fext{background:var(--navy);color:#fff;font-size:8px;font-weight:700;padding:2px 4px;border-radius:3px;text-transform:uppercase;flex-shrink:0}
+.fname{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--navy)}
+.frem{background:none;border:none;cursor:pointer;color:var(--txt3);font-size:14px;padding:0 2px;line-height:1;font-weight:400}.frem:hover{color:var(--red)}
+.extbtn{width:100%;margin-top:8px;padding:8px;font-size:12px;font-weight:700;border-radius:8px;justify-content:center}
+.aimsg{margin-top:8px;border-radius:7px;padding:7px 10px;font-size:11px;display:none;align-items:center;gap:7px}
+.aimsg.load{background:var(--blt);color:var(--blue);display:flex}
+.aimsg.ok{background:var(--grnbg);color:var(--grn);display:flex}
+.aimsg.err{background:var(--redbg);color:var(--red);display:flex}
+
+/* ─── TABS ─── */
+.tabs{background:#fff;border-bottom:1px solid var(--brd);display:flex;padding:0 18px;flex-shrink:0;z-index:10}
+.tab{padding:10px 15px;font-size:12px;font-weight:500;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.tab:hover{color:var(--txt)}
+.tab.on{color:var(--navy);border-bottom-color:var(--blue);font-weight:600}
+.tcnt{background:var(--bg2);color:var(--txt3);font-size:9px;padding:1px 5px;border-radius:10px;font-weight:600}
+.tab.on .tcnt{background:var(--blt);color:var(--blue)}
+.tabsright{margin-left:auto;display:flex;gap:6px;padding:6px 0 6px 10px;align-items:center}
+
+/* ─── PANELS ─── */
+.panel{display:none;flex:1;overflow-y:auto}
+.panel.on{display:block}
+
+/* ─── SUMMARY STRIP ─── */
+.sumstrip{background:#fff;border-bottom:1px solid var(--brd);padding:10px 18px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex-shrink:0}
+.sc .sl{font-size:8.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:2px}
+.sc .sv{font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--navy);letter-spacing:-.3px}
+.sc .sv.acc{color:var(--yellow);background:var(--navy);padding:1px 6px;border-radius:4px;font-size:12px;display:inline-block}
+.sc .ss{font-size:9px;color:var(--txt3)}
+
+/* ─── LINE ITEMS TABLE ─── */
+.tarea{padding:13px 18px}
+.ttb{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ttb h2{font-size:12.5px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:6px}
+.aibadge{background:#EEF4FF;color:#3B5BDB;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.twrap{background:#fff;border:1px solid var(--brd);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh)}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:1160px}
+thead th{background:var(--navy);color:#fff;font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:7px 6px;text-align:right;white-space:nowrap;border-right:1px solid rgba(255,255,255,.08)}
+thead th:last-child{border-right:none}
+thead th.l{text-align:left}
+thead th.c2{background:var(--navy2)}
+thead th.boe{background:#0F2447}
+tr.dr{border-bottom:1px solid var(--bg2)}
+tr.dr:hover{background:var(--bg)}
+tr.dr:last-child{border-bottom:none}
+td{padding:4px 5px;font-size:11px;vertical-align:middle;text-align:right;color:var(--txt)}
+td.l{text-align:left}
+td input,td select{border:1px solid transparent;border-radius:4px;padding:3px 5px;font-family:'DM Mono',monospace;font-size:10.5px;width:100%;text-align:right;background:var(--oin);color:var(--navy);font-weight:500;outline:none}
+td input:focus,td select:focus{border-color:var(--blue);background:#fff}
+td input.t{text-align:left;font-family:'DM Sans',sans-serif}
+td select{text-align:left;font-family:'DM Sans',sans-serif}
+td.cc{background:var(--bg2);font-family:'DM Mono',monospace;font-size:10.5px;color:var(--txt2)}
+td.cc.em{color:var(--navy);font-weight:600}
+td.cc.sell{color:var(--blue);font-weight:700;background:var(--blt)}
+td.cc.mrp{color:var(--navy);font-weight:700;background:var(--bg3)}
+tr.tot-row td{background:var(--navy);color:#fff;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding:6px 7px;text-align:right}
+tr.tot-row td.l{text-align:left;font-size:11.5px}
+tr.tot-row td.c2{background:var(--navy2);color:#fff}
+tr.tot-row td.sell{background:#152A50;color:var(--yellow)}
+tr.tot-row td.mrp{background:#102040;color:#fff}
+.delbtn{background:none;border:none;cursor:pointer;color:var(--txt3);font-size:13px;padding:2px;border-radius:3px;line-height:1}
+.delbtn:hover{color:var(--red)}
+
+/* ─── BOE SUMMARY ─── */
+.boep{background:#fff;border-top:1px solid var(--brd);padding:13px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;flex-shrink:0}
+.boes h3{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txt3);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--brd)}
+.boel{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bg2);font-size:11px}
+.boel:last-child{border-bottom:none}
+.boel span:first-child{color:var(--txt2)}
+.boel span:last-child{font-family:'DM Mono',monospace}
+.boel.tot span{font-size:12px;font-weight:700;color:var(--navy)}
+.boepay{background:var(--navy);border-radius:7px;padding:8px 11px;margin-top:5px;display:flex;justify-content:space-between;align-items:center}
+.boepay span:first-child{color:rgba(255,255,255,.65);font-size:11px}
+.boepay span:last-child{color:var(--yellow);font-size:14px;font-weight:700;font-family:'DM Mono',monospace}
+
+/* ─── HISTORY ─── */
+.harea{padding:14px 18px;display:flex;flex-direction:column;gap:9px}
+.hempty{text-align:center;padding:60px 20px;color:var(--txt3)}
+.hempty .ei{font-size:34px;opacity:.25;margin-bottom:10px}
+.hcard{background:#fff;border:1px solid var(--brd);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);transition:box-shadow .15s,border-color .15s}
+.hcard:hover{box-shadow:var(--shl);border-color:var(--brd2)}
+.hchdr{display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-bottom:1px solid var(--brd);cursor:pointer}
+.hcinv{font-size:13px;font-weight:700;color:var(--navy)}
+.hcmeta{font-size:9.5px;color:var(--txt3);margin-top:1px}
+.hctag{font-size:10px;color:var(--txt2);background:var(--bg2);padding:2px 7px;border-radius:10px;flex-shrink:0}
+.stbadge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0}
+.st-approved{background:var(--grnbg);color:var(--grn)}
+.st-pending{background:#fef3c7;color:#92400e}
+.st-draft{background:var(--bg2);color:var(--txt3)}
+.hcstats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--brd)}
+.hcst{padding:7px 12px;border-right:1px solid var(--brd)}
+.hcst:last-child{border-right:none}
+.hcst .sl{font-size:8.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:1px}
+.hcst .sv{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--navy)}
+.hcst .sv.acc{color:var(--blue)}
+.hcacts{display:flex;gap:6px;padding:8px 12px;align-items:center}
+.hcitems{display:none;padding:0 12px 10px;overflow-x:auto}
+.hcitems.open{display:block}
+.hctbl{width:100%;border-collapse:collapse;min-width:540px;font-size:10px}
+.hctbl th{background:var(--bg2);color:var(--txt3);padding:3px 6px;text-align:left;font-weight:600;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px}
+.hctbl td{padding:3px 6px;border-bottom:1px solid var(--bg2);vertical-align:middle}
+.hctbl td:not(:first-child):not(:nth-child(2)){text-align:right;font-family:'DM Mono',monospace;font-size:9.5px}
+.hctbl tr:last-child td{border-bottom:none}
+.lckbadge{display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;color:#6b7280;font-size:10px;padding:2px 8px;border-radius:10px}
+
+/* ─── COMPARE ─── */
+.cmparea{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.cmpsel{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cslot{background:#fff;border:1px solid var(--brd);border-radius:var(--rl);padding:12px;display:flex;flex-direction:column;gap:7px}
+.cslot h3{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmpcard{background:#fff;border:1px solid var(--brd);border-radius:var(--rl);overflow:hidden}
+.cmpchdr{padding:10px 13px;color:#fff}
+.cmpchdr .ci{font-size:13px;font-weight:700}
+.cmpchdr .cd{font-size:10px;opacity:.6;margin-top:1px}
+.cmpmet{padding:10px 13px}
+.cmprow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bg2);font-size:11px}
+.cmprow:last-child{border-bottom:none;font-weight:600;padding-top:7px}
+.cmprow .cl{color:var(--txt2)}
+.cmprow .cv{font-family:'DM Mono',monospace}
+.diffbar{background:#fff;border:1px solid var(--brd);border-radius:var(--rl);padding:13px}
+.diffbar h3{font-size:11px;font-weight:600;color:var(--navy);margin-bottom:11px}
+.diffrow{display:grid;grid-template-columns:130px 1fr 72px 72px 80px;gap:7px;align-items:center;margin-bottom:5px;font-size:10.5px}
+.difflbl{color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.difftrk{height:5px;background:var(--bg2);border-radius:99px;position:relative;overflow:hidden}
+.dfa{position:absolute;left:0;top:0;height:100%;background:var(--blue);border-radius:99px;transition:width .4s}
+.dfb{position:absolute;left:0;top:0;height:100%;background:var(--purp);border-radius:99px;opacity:.7;transition:width .4s}
+.diffva{font-family:'DM Mono',monospace;color:var(--blue);text-align:right;font-size:10px}
+.diffvb{font-family:'DM Mono',monospace;color:var(--purp);text-align:right;font-size:10px}
+.diffd{font-family:'DM Mono',monospace;text-align:right;font-weight:600;font-size:10px}
+.diffd.pos{color:var(--grn)}.diffd.neg{color:var(--red)}
+
+/* ─── ADMIN ─── */
+.adarea{padding:16px 18px}
+.adgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.adcard{background:#fff;border:1px solid var(--brd);border-radius:var(--rl);padding:15px;box-shadow:var(--sh)}
+.adcard h3{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--brd)}
+.userrow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bg2);font-size:12px}
+.userrow:last-child{border-bottom:none}
+.uemail{flex:1;color:var(--txt2);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.rolesel{width:110px;padding:4px 6px;font-size:11px;background:var(--bg2);border-color:var(--brd2)}
+.permtbl{width:100%;border-collapse:collapse;font-size:11.5px}
+.permtbl th{padding:6px 8px;background:var(--bg2);text-align:left;font-weight:600;color:var(--txt2);font-size:10px}
+.permtbl td{padding:5px 8px;border-bottom:1px solid var(--bg2);text-align:center;font-size:12px}
+.permtbl td:first-child{text-align:left;color:var(--txt2);font-size:11.5px}
+
+/* ─── TOAST ─── */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:#fff;border:1px solid var(--brd);border-radius:8px;padding:10px 14px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;min-width:220px;animation:fadein .2s ease;pointer-events:auto}
+.toast.ok{border-left:3px solid var(--grn);color:var(--grn)}
+.toast.er{border-left:3px solid var(--red);color:var(--red)}
+.toast.in{border-left:3px solid var(--blue);color:var(--blue)}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginWrap">
+  <div class="lcard">
+    <div class="llogo"><span class="lbadge">DVS</span><span class="ltitle">Staff Portal</span></div>
+    <div class="lsub">DVS International Company Limited<br>Authorised Kärcher Dealer · Seychelles</div>
+    <div class="lerr" id="lerr">⚠ <span id="lerrMsg"></span></div>
+    <div class="lfield"><label>Email Address</label><input type="email" id="lemail" placeholder="staff@dvsinternational.sc" onkeydown="if(event.key==='Enter')login()"></div>
+    <div class="lfield"><label>Password</label><input type="password" id="lpass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"></div>
+    <button class="bn lbtn" onclick="login()" id="lbtn">Sign In →</button>
+    <div class="ldivider"><span>or</span></div>
+    <button class="gbtn" onclick="loginGoogle()" id="gbtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <div class="lfooter">Use your company Gmail account to sign in<br>New staff? Ask your admin to set your role after first login</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="appWrap">
+  <header>
+    <span class="hbadge">DVS</span>
+    <h1>Import Calculator</h1>
+    <span class="hpill">Seychelles BOE</span>
+    <span class="sdot" title="Live sync active"></span>
+    <div class="hright">
+      <div class="uinfo">
+        <div class="uname" id="hname"></div>
+        <div id="hrole"></div>
+      </div>
+      <button class="bow bsm" onclick="logout()">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="abody">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- AI Upload -->
+      <div class="sb-sec">
+        <div class="sbt">AI Document Extraction</div>
+        <label class="drop-zone" id="dz">
+          <input type="file" id="fin" accept=".pdf,.csv,.txt,.xlsx,.xls" onchange="handleFile(this.files[0])">
+          <div style="font-size:22px;margin-bottom:5px">📄</div>
+          <div id="dzTitle" style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:2px">Drop / click to upload</div>
+          <div style="font-size:9.5px;color:var(--txt3)">PDF · CSV · TXT</div>
+        </label>
+        <div id="fchip" style="display:none"></div>
+        <button class="bb extbtn" id="extbtn" disabled onclick="runAI()">✦ Extract with AI</button>
+        <div class="aimsg" id="aimsg"></div>
+        <div style="margin-top:8px;padding:8px;background:var(--ybg);border-radius:7px;font-size:9.5px;color:#92400e;line-height:1.5;border:1px solid var(--obd)">
+          💡 <strong>No API key?</strong> Enter items manually using + Row below. Upload works once you add your Anthropic key above.
+        </div>
+      </div>
+
+      <!-- Invoice -->
+      <div class="sb-sec">
+        <div class="sbt">Invoice Reference</div>
+        <div class="sbf">
+          <label>Invoice / BOE Number</label>
+          <div class="irow">
+            <input id="s_inv" placeholder="e.g. INV-2025-001">
+            <button class="bg bxs" onclick="genInv()" title="Auto-generate">⟳</button>
+          </div>
+          <div class="hint">AI detects from document — edit freely</div>
+        </div>
+        <div class="sbf"><label>Exporter</label><input id="s_exp" value="KARCHER"></div>
+        <div class="sbf"><label>Importer</label><input id="s_imp" value="DVS INTERNATIONAL"></div>
+        <div class="sbf"><label>Country of Origin</label><input id="s_ori" value="GERMANY"></div>
+        <div class="sbf"><label>BOL / AWB No.</label><input id="s_bol" placeholder="MSCUX…"></div>
+      </div>
+
+      <!-- Currency -->
+      <div class="sb-sec">
+        <div class="sbt">Currency & Exchange</div>
+        <div class="sbf">
+          <label>Invoice Currency</label>
+          <select id="s_cur" onchange="recalc()">
+            <option value="EUR">EUR – Euro</option>
+            <option value="USD">USD – US Dollar</option>
+            <option value="GBP">GBP – British Pound</option>
+            <option value="ZAR">ZAR – Rand</option>
+            <option value="AED">AED – Dirham</option>
+          </select>
+        </div>
+        <div class="sbf">
+          <label id="fxlbl">Rate (EUR → SCR)</label>
+          <input type="number" id="s_fx" value="18" step="0.0001" oninput="recalc()">
+          <div class="hint">Update daily before pricing</div>
+        </div>
+      </div>
+
+      <!-- Rates -->
+      <div class="sb-sec">
+        <div class="sbt">Rates & Charges</div>
+        <div class="sbf"><label>Default Markup %</label><input type="number" id="s_mk" value="30" oninput="recalc()"></div>
+        <div class="r2">
+          <div class="sbf"><label>Default GST %</label><input type="number" id="s_gst" value="15" oninput="recalc()"></div>
+          <div class="sbf"><label>Trades Tax %</label><input type="number" id="s_tt" value="0" oninput="recalc()"></div>
+        </div>
+        <div class="sbf"><label>Document Charge (SCR)</label><input type="number" id="s_dc" value="25" oninput="recalc()"></div>
+      </div>
+
+      <!-- Freight -->
+      <div class="sb-sec">
+        <div class="sbt">Freight & Handling (SCR)</div>
+        <div class="sbf"><label>Freight Add-on (proportional)</label><input type="number" id="s_fr" value="0" oninput="recalc()"></div>
+        <div class="sbf"><label>Port Handling</label><input type="number" id="s_ph" value="500" oninput="recalc()"></div>
+        <div class="sbf"><label>Customs Agent Fee</label><input type="number" id="s_ag" value="800" oninput="recalc()"></div>
+        <div class="sbf"><label>Local Delivery</label><input type="number" id="s_dl" value="300" oninput="recalc()"></div>
+      </div>
+
+    </aside>
+
+    <!-- MAIN COLUMN -->
+    <div class="maincol">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab on" id="tab-calc" onclick="sw('calc')">🧮 Calculator</div>
+        <div class="tab" id="tab-hist" onclick="sw('hist')" style="display:none">📁 Invoices <span class="tcnt" id="hcnt">0</span></div>
+        <div class="tab" id="tab-cmp" onclick="sw('cmp')" style="display:none">⚖️ Compare</div>
+        <div class="tab" id="tab-adm" onclick="sw('adm')" style="display:none">⚙ Admin</div>
+        <div class="tabsright">
+          <button class="bg bsm" onclick="addRow()">+ Row</button>
+          <button class="bg bsm" style="color:var(--red)" onclick="clearRows()">Clear</button>
+          <button class="bg bsm" onclick="exportExcel()">↓ Excel</button>
+          <button class="by bsm" onclick="saveInv()">💾 Save Invoice</button>
+        </div>
+      </div>
+
+      <!-- CALC PANEL -->
+      <div class="panel on" id="panel-calc" style="display:flex;flex-direction:column">
+        <div class="sumstrip">
+          <div class="sc"><div class="sl">Total CIF (SCR)</div><div class="sv" id="ss_cif">—</div><div class="ss" id="ss_cfx">—</div></div>
+          <div class="sc"><div class="sl">Trades Tax</div><div class="sv" id="ss_tt">—</div><div class="ss">import duty</div></div>
+          <div class="sc"><div class="sl">GST Payable</div><div class="sv" id="ss_gp">—</div><div class="ss">on retail value</div></div>
+          <div class="sc"><div class="sl">Total Payable</div><div class="sv" id="ss_pay">—</div><div class="ss">duties+GST+charges</div></div>
+          <div class="sc"><div class="sl">Max Retail (SCR)</div><div class="sv acc" id="ss_mrp">—</div><div class="ss" id="ss_cnt">0 items</div></div>
+        </div>
+        <div class="tarea" style="flex:1;overflow-y:auto">
+          <div class="ttb">
+            <h2>Line Items <span class="sdot" title="Auto-calculates live"></span><span id="aibadge" class="aibadge" style="display:none">✦ AI extracted</span></h2>
+          </div>
+          <div class="twrap">
+            <div class="tscroll">
+              <table>
+                <thead><tr>
+                  <th class="l" style="width:20px">#</th>
+                  <th class="l c2" style="min-width:80px">HS Code</th>
+                  <th class="l" style="min-width:185px">Description</th>
+                  <th style="width:42px">Qty</th>
+                  <th class="l" style="width:42px">Unit</th>
+                  <th class="l" style="width:34px">Ori</th>
+                  <th style="min-width:82px">Unit Price<br><small style="opacity:.6;font-size:7.5px">(FX)</small></th>
+                  <th style="min-width:72px">CIF/unit<br><small style="opacity:.6;font-size:7.5px">(FX)</small></th>
+                  <th style="width:42px">Disc%</th>
+                  <th class="c2" style="min-width:88px">CIF Value<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
+                  <th class="c2" style="width:44px">Con%</th>
+                  <th class="c2" style="min-width:76px">TradesTax<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
+                  <th class="c2" style="width:44px">Mkup%</th>
+                  <th class="boe" style="min-width:82px">GST Base<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
+                  <th class="boe" style="width:40px">GST%</th>
+                  <th class="boe" style="min-width:78px">GST Pay<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
+                  <th class="boe" style="min-width:88px">Max Retail<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
+                  <th style="width:22px"></th>
+                </tr></thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="boep">
+          <div class="boes"><h3>CIF Summary</h3>
+            <div class="boel"><span>Total CIF (Foreign FX)</span><span id="bp_cfx">—</span></div>
+            <div class="boel"><span>Exchange Rate</span><span id="bp_fx">—</span></div>
+            <div class="boel tot"><span>Total CIF (SCR)</span><span id="bp_cif">—</span></div>
+          </div>
+          <div class="boes"><h3>Duties & Charges</h3>
+            <div class="boel"><span>Trades Tax Payable</span><span id="bp_tt">—</span></div>
+            <div class="boel"><span>GST Payable</span><span id="bp_gst">—</span></div>
+            <div class="boel"><span>Port & Handling</span><span id="bp_hl">—</span></div>
+            <div class="boel"><span>Document Charge</span><span id="bp_dc">—</span></div>
+            <div class="boepay"><span>Total Payable on BOE</span><span id="bp_pay">—</span></div>
+          </div>
+          <div class="boes"><h3>Retail Summary</h3>
+            <div class="boel"><span>Total GST Base</span><span id="bp_gb">—</span></div>
+            <div class="boel"><span>Total GST Payable</span><span id="bp_gp2">—</span></div>
+            <div class="boel tot"><span>Total Max Retail Price</span><span id="bp_mrp">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY PANEL -->
+      <div class="panel" id="panel-hist">
+        <div class="harea" id="harea"><div class="hempty"><div class="ei">📁</div><p>Loading invoices…</p></div></div>
+      </div>
+
+      <!-- COMPARE PANEL -->
+      <div class="panel" id="panel-cmp">
+        <div class="cmparea">
+          <div class="cmpsel">
+            <div class="cslot"><h3>Invoice A</h3>
+              <select id="cmpA" onchange="renderCmp()"><option value="">— select invoice —</option></select>
+              <div id="cinfoA" style="font-size:10.5px;color:var(--txt2);line-height:1.5">No invoice selected</div>
+            </div>
+            <div class="cslot"><h3>Invoice B</h3>
+              <select id="cmpB" onchange="renderCmp()"><option value="">— select invoice —</option></select>
+              <div id="cinfoB" style="font-size:10.5px;color:var(--txt2);line-height:1.5">No invoice selected</div>
+            </div>
+          </div>
+          <div id="cmpout"><div style="text-align:center;padding:40px;color:var(--txt3);font-size:12px">Select two invoices above to compare them side by side</div></div>
+        </div>
+      </div>
+
+      <!-- ADMIN PANEL -->
+      <div class="panel" id="panel-adm">
+        <div class="adarea">
+          <div class="adgrid">
+            <div class="adcard"><h3>👥 User Management</h3><div id="ulist"><div style="color:var(--txt3);font-size:12px">Loading…</div></div></div>
+            <div class="adcard"><h3>🔐 Role Permissions</h3>
+              <table class="permtbl">
+                <thead><tr><th>Action</th><th>Admin</th><th>Manager</th><th>Staff</th></tr></thead>
+                <tbody>
+                  ${[["Create invoice","✅","✅","✅"],["View all invoices","✅","✅","✅"],["Edit own invoice","✅","✅","✅"],["Edit any invoice","✅","✅","❌"],["Approve invoice","✅","✅","❌"],["Delete invoice","✅","❌","❌"],["Manage users","✅","❌","❌"],["Export data","✅","✅","❌"],["Compare invoices","✅","✅","❌"]].map(([a,...r])=>`<tr><td>${a}</td>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script type="module">
+// ════════════════════════════════════════════════════════════════════════
+//  Firebase ESM imports — no CDN script tags needed
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc,
+         updateDoc, deleteDoc, query, orderBy, onSnapshot, where,
+         serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ════════════════════════════════════════════════════════════════════════
+//  🔧 FIREBASE CONFIG — replace with your project values
+//  Firebase Console → Project Settings → Your Apps → Web App → SDK setup
+// ════════════════════════════════════════════════════════════════════════
+const FBC = {
+  apiKey:            "AIzaSyCfcw-RM7-DQdGoJrFYIaby2_RyJsvXny0",
+  authDomain:        "dvs-import-calculator.firebaseapp.com",
+  projectId:         "dvs-import-calculator",
+  storageBucket:     "dvs-import-calculator.firebasestorage.app",
+  messagingSenderId: "708383998032",
+  appId:             "1:708383998032:web:65f2447edd86753b759155"
+};
+// ════════════════════════════════════════════════════════════════════════
+//  🔑 ANTHROPIC API KEY — for AI document extraction
+//  Get from: https://console.anthropic.com/settings/keys
+// ════════════════════════════════════════════════════════════════════════
+const ANTHROPIC_KEY = "PASTE_YOUR_ANTHROPIC_KEY_HERE";
+// ════════════════════════════════════════════════════════════════════════
+
+const app = initializeApp(FBC);
+const auth = getAuth(app);
+const fdb  = getFirestore(app);
+
+// ── STATE ──
+let CU=null, ROLE=null, ROWS=[], RID=0, HIST=[], UNSUB=null;
+let FILE_B64='', FILE_TYPE='', FILE_NAME='', AI_ON=false;
+
+// ── AUTH ──
+onAuthStateChanged(auth, async u => {
+  if(u){
+    CU=u;
+    const ref=doc(fdb,'users',u.uid);
+    const d=await getDoc(ref);
+    if(d.exists){
+      ROLE=d.data().role||'staff';
+    } else {
+      // First time this user signs in — auto-create their user doc as 'staff'
+      // First ever user in the system becomes admin automatically
+      const allUsers=await getDocs(collection(fdb,'users'));
+      ROLE=allUsers.empty?'admin':'staff';
+      await setDoc(ref,{email:u.email,role:ROLE,created_at:serverTimestamp()});
+    }
+    showApp();
+  } else { CU=null; ROLE=null; showLogin(); }
+});
+
+async function login(){
+  const em=v('lemail'),pw=v('lpass');
+  const e=document.getElementById('lerr');
+  e.style.display='none';
+  const b=document.getElementById('lbtn');
+  b.innerHTML='<div class="spin"></div> Signing in…'; b.disabled=true;
+  try{ await signInWithEmailAndPassword(auth,em,pw); }
+  catch(err){
+    const m={'auth/user-not-found':'No account with that email.','auth/wrong-password':'Incorrect password.','auth/invalid-email':'Invalid email address.','auth/too-many-requests':'Too many attempts — wait a moment.'};
+    document.getElementById('lerrMsg').textContent=m[err.code]||'Sign-in failed.';
+    e.style.display='flex'; b.innerHTML='Sign In →'; b.disabled=false;
+  }
+}
+
+async function loginGoogle(){
+  const e=document.getElementById('lerr');
+  e.style.display='none';
+  const b=document.getElementById('gbtn');
+  if(!b) return;
+  b.innerHTML='<div class="spin"></div> Opening Google…'; b.disabled=true;
+  try{
+    const provider=new GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    await signInWithPopup(auth,provider);
+  } catch(err){
+    const msgs={
+      'auth/popup-closed-by-user':'Sign-in window was closed.',
+      'auth/popup-blocked':'Popup blocked — please allow popups for this page in your browser.',
+      'auth/cancelled-popup-request':'Sign-in cancelled.',
+      'auth/unauthorized-domain':'Domain not authorised — add it in Firebase Authentication → Settings → Authorised domains.'
+    };
+    document.getElementById('lerrMsg').textContent=msgs[err.code]||('Google sign-in failed: '+err.message);
+    e.style.display='flex';
+    b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Sign in with Google';
+    b.disabled=false;
+  }
+}
+async function logout(){ if(UNSUB)UNSUB(); await signOut(auth); }
+
+function showLogin(){ id('loginWrap').style.display='flex'; id('appWrap').style.display='none'; }
+function showApp(){
+  id('loginWrap').style.display='none'; id('appWrap').style.display='flex';
+  id('hname').textContent=CU.displayName||CU.email;
+  const rcls={admin:'r-admin',manager:'r-manager',staff:'r-staff'};
+  id('hrole').innerHTML=`<span class="rbadge ${rcls[ROLE]||'r-staff'}">${ROLE}</span>`;
+  // History tab visible to ALL roles
+  id('tab-hist').style.display='flex';
+  // Compare tab: manager and admin only
+  if(['admin','manager'].includes(ROLE)){ id('tab-cmp').style.display='flex'; }
+  // Admin panel: admin only
+  if(ROLE==='admin'){ id('tab-adm').style.display='flex'; loadUsers(); }
+  subscribe(); renderTable(); recalc();
+  toast(`Welcome — signed in as ${ROLE}`,'ok');
+}
+
+// ── FIRESTORE SYNC ──
+function subscribe(){
+  if(UNSUB)UNSUB();
+  UNSUB=onSnapshot(query(collection(fdb,'invoices'),orderBy('saved_at','desc')),snap=>{
+      HIST=snap.docs.map(d=>({id:d.id,...d.data()}));
+      id('hcnt').textContent=HIST.length;
+      updateCmpSelects();
+      if(id('panel-hist').classList.contains('on')) renderHist();
+    });
+}
+
+async function saveInv(){
+  const num=v('s_inv').trim();
+  if(!num){ toast('Enter Invoice / BOE Number first','er'); return; }
+  if(!ROWS.length){ toast('No line items to save','er'); return; }
+  const c=calc(); const pay=c.tTT+c.tGP+c.hl+gn('s_dc');
+  const rec={
+    invoice_number:num, saved_at:serverTimestamp(),
+    saved_by:CU.uid, saved_by_email:CU.email,
+    status:ROLE==='staff'?'pending':'approved',
+    exporter:v('s_exp'),importer:v('s_imp'),origin:v('s_ori'),bol:v('s_bol'),
+    currency:v('s_cur'),fx:gn('s_fx'),mk:gn('s_mk'),gst:gn('s_gst'),tt:gn('s_tt'),
+    dc:gn('s_dc'),fr:gn('s_fr'),ph:gn('s_ph'),ag:gn('s_ag'),dl:gn('s_dl'),
+    rows:JSON.parse(JSON.stringify(ROWS)),
+    totals:{cifSCR:c.tCIF,cifFX:c.tFX,tt:c.tTT,gb:c.tGB,gp:c.tGP,mrp:c.tMRP,pay,hl:c.hl,n:ROWS.length}
+  };
+  try{
+    const ex=await getDocs(query(collection(fdb,'invoices'),where('invoice_number','==',num)));
+    if(!ex.empty){
+      const ed=ex.docs[0]; const edat=ed.data();
+      if(ROLE==='staff'&&edat.saved_by!==CU.uid){ toast('You can only edit your own invoices','er'); return; }
+      if(!confirm(`"${num}" already exists. Overwrite?`)) return;
+      await updateDoc(doc(fdb,'invoices',ed.id),rec);
+      toast(`Invoice "${num}" updated ✓`,'ok');
+    } else {
+      await addDoc(collection(fdb,'invoices'),rec);
+      toast(`Invoice "${num}" saved ✓`,'ok');
+    }
+  } catch(e){ toast('Save failed: '+e.message,'er'); }
+}
+
+async function approveInv(id){
+  if(!['admin','manager'].includes(ROLE)){ toast('Insufficient permissions','er'); return; }
+  await updateDoc(doc(fdb,'invoices',id),{status:'approved'});
+  toast('Invoice approved','ok');
+}
+async function delInv(id){
+  if(ROLE!=='admin'){ toast('Only admins can delete invoices','er'); return; }
+  if(!confirm('Permanently delete this invoice? This cannot be undone.')) return;
+  await deleteDoc(doc(fdb,'invoices',id));
+  toast('Invoice deleted','in');
+}
+function loadInv(inv){
+  ['s_inv','s_exp','s_imp','s_ori','s_bol'].forEach((f,i)=>{ const vals=[inv.invoice_number||'',inv.exporter||'',inv.importer||'',inv.origin||'',inv.bol||'']; id(f).value=vals[i]; });
+  id('s_cur').value=inv.currency||'EUR'; id('s_fx').value=inv.fx||18;
+  id('s_mk').value=inv.mk||30; id('s_gst').value=inv.gst||15; id('s_tt').value=inv.tt||0;
+  id('s_dc').value=inv.dc||25; id('s_fr').value=inv.fr||0;
+  id('s_ph').value=inv.ph||500; id('s_ag').value=inv.ag||800; id('s_dl').value=inv.dl||300;
+  let rid=RID; ROWS=(inv.rows||[]).map(r=>({...r,id:++rid})); RID=rid;
+  AI_ON=false; id('aibadge').style.display='none';
+  renderTable(); recalc(); sw('calc');
+  toast(`Loaded "${inv.invoice_number}"`,'in');
+}
+
+// ── AI EXTRACTION ──
+const dz=id('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dov')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dov'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dov');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+
+function handleFile(f){
+  if(!f)return;
+  const ext=f.name.split('.').pop().toLowerCase();
+  FILE_NAME=f.name; FILE_TYPE=ext;
+  id('fchip').style.display='flex';
+  id('fchip').innerHTML=`<span class="fext">${ext}</span><span class="fname">${f.name}</span><span style="font-size:9px;color:var(--txt3)">${(f.size/1024).toFixed(0)}KB</span><button class="frem" onclick="clearFile()">×</button>`;
+  id('dzTitle').textContent=f.name;
+  id('extbtn').disabled=false;
+  setAiMsg('');
+  const r=new FileReader(); r.onload=e=>{FILE_B64=e.target.result.split(',')[1]}; r.readAsDataURL(f);
+}
+function clearFile(){ FILE_B64=''; FILE_NAME=''; FILE_TYPE=''; id('fchip').style.display='none'; id('dzTitle').textContent='Drop / click to upload'; id('extbtn').disabled=true; id('fin').value=''; setAiMsg(''); }
+
+async function runAI(){
+  if(!FILE_B64){ toast('No file selected','er'); return; }
+  if(ANTHROPIC_KEY.startsWith('PASTE')){ toast('Add your Anthropic API key in the script section','er'); return; }
+  const btn=id('extbtn'); btn.disabled=true;
+  setAiMsg('load','Reading document…');
+  const sys=`Expert customs document reader for DVS International Seychelles (Kärcher dealer).
+Extract ALL data. Return ONLY valid JSON — no markdown, no explanation:
+{"shipment":{"invoice_number":null,"exporter":null,"importer":null,"currency":null,"exchange_rate":null,"origin_country":null,"bol_number":null},"items":[{"line":1,"hs_code":null,"description":"","qty":1,"unit":"pcs","origin":null,"unit_price_fx":0,"cif_per_unit_fx":0,"cif_value_scr":null,"discount_pct":0,"concession_tax_rate":0,"trades_tax_rate":0,"markup_pct":0.3,"gst_rate":0.15,"max_retail_price":null}]}
+Rules: extract every line. Seychelles BOE CIF column is already in SCR. All rates as decimals (0.3=30%). Defaults: markup_pct=0.3, gst_rate=0.15.`;
+  try{
+    let content;
+    if(FILE_TYPE==='pdf') content=[{type:"document",source:{type:"base64",media_type:"application/pdf",data:FILE_B64}},{type:"text",text:"Extract all items. JSON only."}];
+    else if(['csv','txt'].includes(FILE_TYPE)){const txt=atob(FILE_B64);content=[{type:"text",text:`File: ${FILE_NAME}\n\n${txt}\n\nJSON only.`}];}
+    else content=[{type:"text",text:`Binary Excel: ${FILE_NAME}. Cannot read binary. Return {"error":"excel_binary","items":[]}`}];
+    setAiMsg('load','Analysing line items…');
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:sys,messages:[{role:"user",content}]})});
+    if(!res.ok) throw new Error(`API ${res.status} — check your API key`);
+    const d=await res.json();
+    const raw=d.content.map(b=>b.text||'').join('');
+    let p; try{p=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch{throw new Error('Could not parse AI response')}
+    if(p.error==='excel_binary'){setAiMsg('err','Save Excel as CSV then re-upload');btn.disabled=false;return;}
+    const s=p.shipment||{};
+    if(s.invoice_number) id('s_inv').value=s.invoice_number;
+    if(s.exporter) id('s_exp').value=s.exporter;
+    if(s.importer) id('s_imp').value=s.importer;
+    if(s.origin_country) id('s_ori').value=s.origin_country;
+    if(s.bol_number) id('s_bol').value=s.bol_number;
+    if(s.currency) id('s_cur').value=s.currency;
+    if(s.exchange_rate&&s.exchange_rate>0) id('s_fx').value=s.exchange_rate;
+    if(p.items&&p.items.length){
+      let rid=RID;
+      ROWS=p.items.map(item=>({id:++rid,hs:item.hs_code||'',desc:item.description||'',qty:item.qty||1,unit:item.unit||'pcs',ori:(item.origin||s.origin_country||'EU').slice(0,2).toLowerCase(),up:item.unit_price_fx||0,cif:item.cif_per_unit_fx||0,disc:(item.discount_pct||0)*100,cifSCR:item.cif_value_scr||null,con:(item.concession_tax_rate||0)*100,tt:(item.trades_tax_rate||0)*100,mk:(item.markup_pct||0.3)*100,gr:(item.gst_rate||0.15)*100,mrpOv:item.max_retail_price||null}));
+      RID=rid; AI_ON=true; id('aibadge').style.display='inline-flex';
+      setAiMsg('ok',`${ROWS.length} items extracted successfully`);
+      renderTable(); recalc();
+    } else setAiMsg('err','No items found in document');
+  } catch(e){ setAiMsg('err',e.message||'Extraction failed'); }
+  btn.disabled=false;
+}
+function setAiMsg(type,msg){
+  const el=id('aimsg');
+  if(!type){el.style.display='none';return;}
+  el.className='aimsg '+type;
+  el.innerHTML=`<span>${type==='ok'?'✓':type==='err'?'✗':'<div class="spin"></div>'}</span><span>${msg}</span>`;
+  el.style.display='flex';
+}
+
+// ── CALC ENGINE ──
+function calc(){
+  const fx=gn('s_fx'),fr=gn('s_fr'),ph=gn('s_ph'),ag=gn('s_ag'),dl=gn('s_dl');
+  const cifMap={};let totFX=0;
+  ROWS.forEach(r=>{const cFX=r.qty*(r.up*(1-r.disc/100)+r.cif);cifMap[r.id]=r.cifSCR||(cFX*fx);totFX+=cFX});
+  const sumSCR=Object.values(cifMap).reduce((a,b)=>a+b,0);
+  const rc=ROWS.map(r=>{
+    const c=cifMap[r.id],frSh=sumSCR>0?(c/sumSCR)*fr:0,cif=c+frSh;
+    const con=cif*(r.con/100),tt=(cif-con)*(r.tt/100),gb=(cif+tt)*(1+r.mk/100),gp=gb*(r.gr/100),mrp=r.mrpOv||(gb+gp);
+    return{id:r.id,cif,tt,gb,gp,mrp};
+  });
+  const tCIF=rc.reduce((a,b)=>a+b.cif,0),tTT=rc.reduce((a,b)=>a+b.tt,0),tGB=rc.reduce((a,b)=>a+b.gb,0),tGP=rc.reduce((a,b)=>a+b.gp,0),tMRP=rc.reduce((a,b)=>a+b.mrp,0);
+  return{rc,tCIF,tFX:totFX,tTT,tGB,tGP,tMRP,hl:ph+ag+dl};
+}
+
+function recalc(){
+  const c=calc(),pay=c.tTT+c.tGP+c.hl+gn('s_dc'),cur=v('s_cur'),fx=gn('s_fx');
+  id('fxlbl').textContent=`Rate (${cur} → SCR)`;
+  const f2=n=>n.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const scr=n=>'SCR\u00a0'+Math.round(n).toLocaleString('en');
+  c.rc.forEach(r=>{const s=(i,v)=>{const el=document.getElementById(i);if(el)el.textContent=v>0?f2(v):'—'};s(`cc_${r.id}`,r.cif);s(`ct_${r.id}`,r.tt);s(`gb_${r.id}`,r.gb);s(`gp_${r.id}`,r.gp);s(`mp_${r.id}`,r.mrp)});
+  const st=(i,t)=>{const el=document.getElementById(i);if(el)el.textContent=t};
+  st('ss_cif',ROWS.length?scr(c.tCIF):'—'); st('ss_cfx',ROWS.length?`${f2(c.tFX)} ${cur}`:'—');
+  st('ss_tt',ROWS.length?scr(c.tTT):'—'); st('ss_gp',ROWS.length?scr(c.tGP):'—');
+  st('ss_pay',ROWS.length?scr(pay):'—'); st('ss_mrp',ROWS.length?scr(c.tMRP):'—');
+  st('ss_cnt',ROWS.length+' item'+(ROWS.length!==1?'s':''));
+  st('bp_cfx',ROWS.length?`${f2(c.tFX)} ${cur}`:'—'); st('bp_fx',`1 ${cur} = ${fx} SCR`);
+  st('bp_cif',ROWS.length?scr(c.tCIF):'—'); st('bp_tt',ROWS.length?scr(c.tTT):'—');
+  st('bp_gst',ROWS.length?scr(c.tGP):'—'); st('bp_hl',scr(c.hl));
+  st('bp_dc',`SCR ${gn('s_dc').toLocaleString('en')}`); st('bp_pay',ROWS.length?scr(pay):'—');
+  st('bp_gb',ROWS.length?scr(c.tGB):'—'); st('bp_gp2',ROWS.length?scr(c.tGP):'—');
+  st('bp_mrp',ROWS.length?scr(c.tMRP):'—');
+  // update totals row if rendered
+  const f2r=n=>n.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  ['tot_cif','tot_tt','tot_gb','tot_gp','tot_mrp'].forEach((i,j)=>{const el=document.getElementById(i);if(el)el.textContent=f2r([c.tCIF,c.tTT,c.tGB,c.tGP,c.tMRP][j])});
+}
+
+// ── TABLE ──
+const UNITS=['pcs','kg','l','set','box','pallet','roll','pair'];
+function renderTable(){
+  const tb=id('tbody');
+  if(!ROWS.length){tb.innerHTML=`<tr><td colspan="18" style="text-align:center;padding:30px;color:var(--txt3)"><div style="font-size:22px;opacity:.2;margin-bottom:6px">📦</div>No items — upload a document or click + Row</td></tr>`;return;}
+  const c=calc();
+  tb.innerHTML=ROWS.map((r,i)=>{
+    const cr=c.rc.find(x=>x.id===r.id)||{};
+    const f2=n=>n?(+n).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+    const bg=i%2===0?'#fff':'#F7FAFD';
+    return `<tr class="dr" style="background:${bg}">
+      <td style="text-align:center;font-size:9px;color:var(--txt3)">${i+1}</td>
+      <td class="l"><input class="t" value="${esc(r.hs)}" style="width:76px" onchange="ur(${r.id},'hs',this.value)"></td>
+      <td class="l"><input class="t" value="${esc(r.desc)}" style="width:100%" oninput="ur(${r.id},'desc',this.value)"></td>
+      <td><input type="number" value="${r.qty}" style="width:38px" oninput="ur(${r.id},'qty',+this.value)"></td>
+      <td class="l"><select style="width:44px;font-size:10px" onchange="ur(${r.id},'unit',this.value)">${UNITS.map(u=>`<option ${r.unit===u?'selected':''}>${u}</option>`).join('')}</select></td>
+      <td class="l"><input class="t" value="${esc(r.ori)}" style="width:30px" onchange="ur(${r.id},'ori',this.value)"></td>
+      <td><input type="number" value="${r.up||0}" style="width:78px" oninput="ur(${r.id},'up',+this.value)"></td>
+      <td><input type="number" value="${r.cif||0}" style="width:65px" oninput="ur(${r.id},'cif',+this.value)"></td>
+      <td><input type="number" value="${r.disc||0}" style="width:38px" oninput="ur(${r.id},'disc',+this.value)"></td>
+      <td class="cc em" id="cc_${r.id}">${f2(cr.cif)}</td>
+      <td><input type="number" value="${r.con||0}" style="width:38px" oninput="ur(${r.id},'con',+this.value)"></td>
+      <td class="cc" id="ct_${r.id}">${f2(cr.tt)}</td>
+      <td><input type="number" value="${r.mk||30}" style="width:38px" oninput="ur(${r.id},'mk',+this.value)"></td>
+      <td class="cc" id="gb_${r.id}">${f2(cr.gb)}</td>
+      <td><input type="number" value="${r.gr||15}" style="width:36px" oninput="ur(${r.id},'gr',+this.value)"></td>
+      <td class="cc sell" id="gp_${r.id}">${f2(cr.gp)}</td>
+      <td class="cc mrp" id="mp_${r.id}">${f2(cr.mrp)}</td>
+      <td style="text-align:center"><button class="delbtn" onclick="delRow(${r.id})">×</button></td>
+    </tr>`;
+  }).join('')+`<tr class="tot-row"><td colspan="9" class="l">TOTALS</td>
+    <td class="em c2" id="tot_cif"></td><td class="c2"></td><td class="c2" id="tot_tt"></td><td class="c2"></td>
+    <td class="c2" id="tot_gb"></td><td class="c2"></td><td class="sell c2" id="tot_gp"></td>
+    <td class="mrp" id="tot_mrp"></td><td class="c2"></td></tr>`;
+  recalc();
+}
+function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function ur(id,f,v){const r=ROWS.find(x=>x.id===id);if(r){r[f]=v;recalc();}}
+function addRow(){ROWS.push({id:++RID,hs:'',desc:'',qty:1,unit:'pcs',ori:'eu',up:0,cif:0,disc:0,cifSCR:null,con:0,tt:0,mk:30,gr:15,mrpOv:null});renderTable();recalc();}
+function delRow(rid){ROWS=ROWS.filter(r=>r.id!==rid);renderTable();recalc();}
+function clearRows(){if(ROWS.length&&!confirm('Clear all rows?'))return;ROWS=[];AI_ON=false;id('aibadge').style.display='none';renderTable();recalc();}
+function genInv(){const d=new Date();id('s_inv').value=`DVS-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(Math.floor(Math.random()*900)+100)}`;}
+
+// ── HISTORY RENDER ──
+function renderHist(){
+  const area=id('harea');
+  if(!HIST.length){area.innerHTML='<div class="hempty"><div class="ei">📁</div><p style="font-size:13px">No invoices saved yet.<br>Fill the calculator and click <strong>Save Invoice</strong>.</p></div>';return;}
+  const scr=n=>'SCR '+Math.round(n||0).toLocaleString('en');
+  area.innerHTML=HIST.map(inv=>{
+    const isOwn=inv.saved_by===CU?.uid;
+    const canEdit=ROLE!=='staff'||isOwn;
+    const canApprove=['admin','manager'].includes(ROLE)&&inv.status!=='approved';
+    const canDel=ROLE==='admin';
+    const saved=inv.saved_at?.toDate?inv.saved_at.toDate().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const stcls={approved:'st-approved',pending:'st-pending',draft:'st-draft'}[inv.status]||'st-draft';
+    return `<div class="hcard">
+      <div class="hchdr" onclick="toggleItems('hi_${inv.id}')">
+        <div style="flex:1;min-width:0">
+          <div class="hcinv">${inv.invoice_number||'—'}</div>
+          <div class="hcmeta">${saved} · ${inv.saved_by_email||'?'}</div>
+        </div>
+        <span class="hctag">${inv.exporter||''}</span>
+        <span class="stbadge ${stcls}">${inv.status||'draft'}</span>
+        <span style="color:var(--txt3);font-size:10px;margin-left:4px">${inv.currency||''}·${inv.fx||''}</span>
+      </div>
+      <div class="hcstats">
+        <div class="hcst"><div class="sl">CIF (SCR)</div><div class="sv">${scr(inv.totals?.cifSCR)}</div></div>
+        <div class="hcst"><div class="sl">Duties+GST</div><div class="sv">${scr((inv.totals?.tt||0)+(inv.totals?.gp||0))}</div></div>
+        <div class="hcst"><div class="sl">Total Payable</div><div class="sv">${scr(inv.totals?.pay)}</div></div>
+        <div class="hcst"><div class="sl">Max Retail</div><div class="sv acc">${scr(inv.totals?.mrp)}</div></div>
+      </div>
+      <div class="hcacts">
+        ${canEdit?`<button class="bb bxs" onclick='loadInv(${JSON.stringify(inv).replace(/'/g,"&#39;")})'>↩ Load & Edit</button>`:'<span class="lckbadge">🔒 View only</span>'}
+        ${canApprove?`<button class="bgrn bxs" onclick="approveInv('${inv.id}')">✓ Approve</button>`:''}
+        <button class="bg bxs" onclick="exportInvExcel('${inv.id}')">↓ Excel</button>
+        <span style="flex:1"></span>
+        <span style="font-size:9.5px;color:var(--txt3);cursor:pointer" onclick="toggleItems('hi_${inv.id}')">▸ ${inv.totals?.n||0} items</span>
+        ${canDel?`<button class="bred bxs" onclick="delInv('${inv.id}')">Delete</button>`:''}
+      </div>
+      <div class="hcitems" id="hi_${inv.id}">
+        <table class="hctbl">
+          <thead><tr><th>HS Code</th><th>Description</th><th>Qty</th><th>CIF (SCR)</th><th>Trades Tax</th><th>GST Pay</th><th>Max Retail</th></tr></thead>
+          <tbody>${(inv.rows||[]).map(r=>{
+            const cFX=r.qty*(r.up*(1-r.disc/100)+r.cif);const cSCR=r.cifSCR||(cFX*(inv.fx||18));
+            const con=cSCR*(r.con/100);const tt=(cSCR-con)*(r.tt/100);
+            const gb=(cSCR+tt)*(1+r.mk/100);const gp=gb*(r.gr/100);const mrp=r.mrpOv||(gb+gp);
+            const f2=n=>(+n).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+            return`<tr><td>${r.hs||''}</td><td>${r.desc||''}</td><td style="text-align:right">${r.qty}</td><td>${f2(cSCR)}</td><td>${f2(tt)}</td><td>${f2(gp)}</td><td style="font-weight:600;color:var(--navy)">${f2(mrp)}</td></tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleItems(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+// ── COMPARE ──
+function updateCmpSelects(){
+  const opts='<option value="">— select invoice —</option>'+HIST.map(i=>`<option value="${i.id}">${i.invoice_number||'?'} · ${i.saved_at?.toDate?i.saved_at.toDate().toLocaleDateString('en-GB'):'?'}</option>`).join('');
+  id('cmpA').innerHTML=opts; id('cmpB').innerHTML=opts;
+}
+function renderCmp(){
+  const iA=HIST.find(x=>x.id===v('cmpA')),iB=HIST.find(x=>x.id===v('cmpB'));
+  const desc=i=>i?`${i.exporter||''} · ${i.currency} ${i.fx} · ${i.totals?.n||0} items`:'No invoice selected';
+  id('cinfoA').textContent=desc(iA); id('cinfoB').textContent=desc(iB);
+  const out=id('cmpout');
+  if(!iA||!iB){out.innerHTML='<div style="text-align:center;padding:40px;color:var(--txt3);font-size:12px">Select two invoices above to compare</div>';return;}
+  const scr=n=>'SCR '+Math.round(n||0).toLocaleString('en');
+  const metrics=[['Total CIF (SCR)',iA.totals?.cifSCR,iB.totals?.cifSCR],['Trades Tax',iA.totals?.tt,iB.totals?.tt],['GST Payable',iA.totals?.gp,iB.totals?.gp],['Port & Handling',iA.totals?.hl,iB.totals?.hl],['Total Payable',iA.totals?.pay,iB.totals?.pay],['Max Retail',iA.totals?.mrp,iB.totals?.mrp]];
+  const mx=Math.max(...metrics.map(m=>Math.max(m[1]||0,m[2]||0)));
+  const pct=(v,mx)=>mx>0?Math.max((v/mx)*100,2).toFixed(1):0;
+  out.innerHTML=`<div class="cmpgrid">
+    ${[iA,iB].map((inv,i)=>`<div class="cmpcard"><div class="cmpchdr" style="background:${i===0?'var(--navy)':'var(--purp)'}"><div class="ci">${inv.invoice_number}</div><div class="cd">${inv.exporter||''} · ${new Date(inv.saved_at?.toDate?inv.saved_at.toDate():inv.saved_at).toLocaleDateString('en-GB')}</div></div><div class="cmpmet">${metrics.map(([l,a,b])=>`<div class="cmprow"><span class="cl">${l}</span><span class="cv">${scr(i===0?a:b)}</span></div>`).join('')}</div></div>`).join('')}
+  </div>
+  <div class="diffbar">
+    <h3>Side-by-side — <span style="color:var(--blue)">■ ${iA.invoice_number}</span> vs <span style="color:var(--purp)">■ ${iB.invoice_number}</span></h3>
+    ${metrics.map(([l,a,b])=>{const d=(b||0)-(a||0);return`<div class="diffrow"><div class="difflbl">${l}</div><div class="difftrk"><div class="dfa" style="width:${pct(a||0,mx)}%"></div><div class="dfb" style="width:${pct(b||0,mx)}%"></div></div><div class="diffva">${scr(a||0)}</div><div class="diffvb">${scr(b||0)}</div><div class="diffd ${d>0?'pos':d<0?'neg':''}">${d>=0?'+':''}${scr(d)}</div></div>`;}).join('')}
+  </div>`;
+}
+
+// ── ADMIN ──
+async function loadUsers(){
+  const snap=await getDocs(collection(fdb,'users'));
+  const ul=id('ulist');
+  if(snap.empty){ul.innerHTML='<div style="color:var(--txt3);font-size:12px">No users registered yet.</div>';return;}
+  ul.innerHTML=snap.docs.map(d=>{const u=d.data();return`<div class="userrow"><div class="uemail">${u.email||d.id}</div><select class="rolesel" onchange="updateRole('${d.id}',this.value)">${['admin','manager','staff'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}</select></div>`;}).join('');
+}
+async function updateRole(uid,role){await updateDoc(doc(fdb,'users',uid),{role});toast(`Role updated to ${role}`,'ok');}
+
+// ── EXCEL EXPORT ──
+function buildExcelData(inv){
+  const rr=inv?inv.rows:ROWS; const fxR=inv?inv.fx:gn('s_fx'); const cur=inv?inv.currency:v('s_cur');
+  const rows=[
+    ['DVS INTERNATIONAL COMPANY LIMITED'],
+    ['Authorised Kärcher Dealer & Service Centre | Dekk House, Providence Industrial Estate, Mahe, Seychelles'],
+    ['SEYCHELLES CUSTOMS — BILL OF ENTRY CALCULATION SHEET'],[''],
+    [`Invoice No: ${inv?.invoice_number||v('s_inv')||''}`,``,``,`Date: ${new Date().toLocaleDateString('en-GB')}`],
+    [`Exporter: ${inv?.exporter||v('s_exp')||''}`,``,``,`Importer: ${inv?.importer||v('s_imp')||''}`],
+    [`Origin: ${inv?.origin||v('s_ori')||''}`,``,``,`Currency: ${cur}   Rate: 1 ${cur} = ${fxR} SCR`],[''],
+    ['#','HS Code','Description','Qty','Unit','Origin','Unit Price (FX)','CIF/unit (FX)','Disc%','CIF Value (SCR)','Con%','Trades Tax (SCR)','Markup%','GST Base (SCR)','GST%','GST Pay (SCR)','Max Retail Price (SCR)']
+  ];
+  let totCIF=0,totTT=0,totGB=0,totGP=0,totMRP=0;
+  rr.forEach((r,i)=>{
+    const cFX=r.qty*(r.up*(1-r.disc/100)+r.cif);const cSCR=r.cifSCR||(cFX*fxR);
+    const con=cSCR*(r.con/100);const tt=(cSCR-con)*(r.tt/100);
+    const gb=(cSCR+tt)*(1+r.mk/100);const gp=gb*(r.gr/100);const mrp=r.mrpOv||(gb+gp);
+    totCIF+=cSCR;totTT+=tt;totGB+=gb;totGP+=gp;totMRP+=mrp;
+    rows.push([i+1,r.hs||'',r.desc||'',r.qty,r.unit||'',r.ori||'',+r.up,+r.cif,+r.disc,+cSCR.toFixed(2),+r.con,+tt.toFixed(2),+r.mk,+gb.toFixed(2),+r.gr,+gp.toFixed(2),+mrp.toFixed(2)]);
+  });
+  const ph=inv?inv.ph:gn('s_ph'),ag2=inv?inv.ag:gn('s_ag'),dl=inv?inv.dl:gn('s_dl'),dc=inv?inv.dc:gn('s_dc');
+  const pay=totTT+totGP+(ph||0)+(ag2||0)+(dl||0)+(dc||0);
+  rows.push(['','','TOTALS','','','','','','',+totCIF.toFixed(2),'',+totTT.toFixed(2),'',+totGB.toFixed(2),'',+totGP.toFixed(2),+totMRP.toFixed(2)],[],
+    ['SUMMARY'],['Total CIF (SCR)',+totCIF.toFixed(2)],['Total Trades Tax (SCR)',+totTT.toFixed(2)],
+    ['Total GST Payable (SCR)',+totGP.toFixed(2)],['Port & Handling (SCR)',+(ph+ag2+dl).toFixed(2)],
+    ['Document Charge (SCR)',+(dc).toFixed(2)],['TOTAL PAYABLE ON BOE (SCR)',+pay.toFixed(2)],[],
+    ['TOTAL MAX RETAIL PRICE (SCR)',+totMRP.toFixed(2)]);
+  return rows;
+}
+function exportExcel(inv){
+  const wb=window.XLSX.utils.book_new();
+  const ws=window.XLSX.utils.aoa_to_sheet(buildExcelData(inv||null));
+  ws['!cols']=[{wch:4},{wch:12},{wch:36},{wch:6},{wch:7},{wch:7},{wch:13},{wch:12},{wch:7},{wch:15},{wch:7},{wch:14},{wch:8},{wch:15},{wch:7},{wch:13},{wch:16}];
+  window.XLSX.utils.book_append_sheet(wb,ws,'BOE Calculator');
+  const label=(inv?.invoice_number||v('s_inv')||'export').replace(/[^a-zA-Z0-9-]/g,'_');
+  window.XLSX.writeFile(wb,`DVS_BOE_${label}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel downloaded','ok');
+}
+function exportInvExcel(did){
+  const inv=HIST.find(x=>x.id===did);
+  if(inv) exportExcel(inv); else toast('Invoice not found','er');
+}
+
+// ── TABS ──
+function sw(t){
+  ['calc','hist','cmp','adm'].forEach(k=>{
+    id('tab-'+k)?.classList.toggle('on',k===t);
+    id('panel-'+k)?.classList.toggle('on',k===t);
+  });
+  if(t==='hist') renderHist();
+  if(t==='cmp') renderCmp();
+}
+
+// ── HELPERS ──
+const id=x=>document.getElementById(x);
+const v=x=>id(x)?.value||'';
+const gn=x=>parseFloat(id(x)?.value)||0;
+function toast(msg,type='in'){
+  const w=id('toasts');const t=document.createElement('div');
+  t.className=`toast ${type}`;t.innerHTML=`<span>${type==='ok'?'✓':type==='er'?'✗':'ℹ'}</span><span>${msg}</span>`;
+  w.appendChild(t);setTimeout(()=>t.remove(),3500);
+}
+</script>
+</body>
+</html>
