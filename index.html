@@ -279,11 +279,7 @@ tr.tot-row td.mrp{background:#102040;color:#fff}
     <span class="hpill">Seychelles BOE</span>
     <span class="sdot" title="Live sync active"></span>
     <div class="hright">
-      <div class="uinfo">
-        <div class="uname" id="hname"></div>
-        <div id="hrole"></div>
-      </div>
-      <button class="bow bsm" onclick="logout()">Sign Out</button>
+      <span style="color:rgba(255,255,255,.6);font-size:11px">Kärcher Dealer · Seychelles</span>
     </div>
   </header>
 
@@ -410,6 +406,7 @@ tr.tot-row td.mrp{background:#102040;color:#fff}
                   <th style="min-width:82px">Unit Price<br><small style="opacity:.6;font-size:7.5px">(FX)</small></th>
                   <th style="min-width:72px">CIF/unit<br><small style="opacity:.6;font-size:7.5px">(FX)</small></th>
                   <th style="width:42px">Disc%</th>
+                  <th class="c2" style="min-width:88px">CIF Value<br><small style="opacity:.6;font-size:7.5px">(EUR)</small></th>
                   <th class="c2" style="min-width:88px">CIF Value<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
                   <th class="c2" style="width:44px">Con%</th>
                   <th class="c2" style="min-width:76px">TradesTax<br><small style="opacity:.6;font-size:7.5px">(SCR)</small></th>
@@ -495,8 +492,7 @@ tr.tot-row td.mrp{background:#102040;color:#fff}
 // ════════════════════════════════════════════════════════════════════════
 //  Firebase ESM imports — no CDN script tags needed
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup }
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc,
          updateDoc, deleteDoc, query, orderBy, onSnapshot, where,
          serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -520,85 +516,25 @@ const ANTHROPIC_KEY = "PASTE_YOUR_ANTHROPIC_KEY_HERE";
 // ════════════════════════════════════════════════════════════════════════
 
 const app = initializeApp(FBC);
-const auth = getAuth(app);
+
 const fdb  = getFirestore(app);
 
 // ── STATE ──
 let CU=null, ROLE=null, ROWS=[], RID=0, HIST=[], UNSUB=null;
 let FILE_B64='', FILE_TYPE='', FILE_NAME='', AI_ON=false;
 
-// ── AUTH ──
-onAuthStateChanged(auth, async u => {
-  if(u){
-    CU=u;
-    const ref=doc(fdb,'users',u.uid);
-    const d=await getDoc(ref);
-    if(d.exists){
-      ROLE=d.data().role||'staff';
-    } else {
-      // First time this user signs in — auto-create their user doc as 'staff'
-      // First ever user in the system becomes admin automatically
-      const allUsers=await getDocs(collection(fdb,'users'));
-      ROLE=allUsers.empty?'admin':'staff';
-      await setDoc(ref,{email:u.email,role:ROLE,created_at:serverTimestamp()});
-    }
-    showApp();
-  } else { CU=null; ROLE=null; showLogin(); }
-});
-
-async function login(){
-  const em=v('lemail'),pw=v('lpass');
-  const e=document.getElementById('lerr');
-  e.style.display='none';
-  const b=document.getElementById('lbtn');
-  b.innerHTML='<div class="spin"></div> Signing in…'; b.disabled=true;
-  try{ await signInWithEmailAndPassword(auth,em,pw); }
-  catch(err){
-    const m={'auth/user-not-found':'No account with that email.','auth/wrong-password':'Incorrect password.','auth/invalid-email':'Invalid email address.','auth/too-many-requests':'Too many attempts — wait a moment.'};
-    document.getElementById('lerrMsg').textContent=m[err.code]||'Sign-in failed.';
-    e.style.display='flex'; b.innerHTML='Sign In →'; b.disabled=false;
-  }
-}
-
-async function loginGoogle(){
-  const e=document.getElementById('lerr');
-  e.style.display='none';
-  const b=document.getElementById('gbtn');
-  if(!b) return;
-  b.innerHTML='<div class="spin"></div> Opening Google…'; b.disabled=true;
-  try{
-    const provider=new GoogleAuthProvider();
-    provider.setCustomParameters({prompt:'select_account'});
-    await signInWithPopup(auth,provider);
-  } catch(err){
-    const msgs={
-      'auth/popup-closed-by-user':'Sign-in window was closed.',
-      'auth/popup-blocked':'Popup blocked — please allow popups for this page in your browser.',
-      'auth/cancelled-popup-request':'Sign-in cancelled.',
-      'auth/unauthorized-domain':'Domain not authorised — add it in Firebase Authentication → Settings → Authorised domains.'
-    };
-    document.getElementById('lerrMsg').textContent=msgs[err.code]||('Google sign-in failed: '+err.message);
-    e.style.display='flex';
-    b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Sign in with Google';
-    b.disabled=false;
-  }
-}
-async function logout(){ if(UNSUB)UNSUB(); await signOut(auth); }
+// ── NO LOGIN — open directly ──
+ROLE='admin'; CU={uid:'local',email:'DVS International'};
+window.addEventListener('load', showApp);
+function logout(){ if(UNSUB)UNSUB(); location.reload(); }
 
 function showLogin(){ id('loginWrap').style.display='flex'; id('appWrap').style.display='none'; }
 function showApp(){
   id('loginWrap').style.display='none'; id('appWrap').style.display='flex';
-  id('hname').textContent=CU.displayName||CU.email;
-  const rcls={admin:'r-admin',manager:'r-manager',staff:'r-staff'};
-  id('hrole').innerHTML=`<span class="rbadge ${rcls[ROLE]||'r-staff'}">${ROLE}</span>`;
-  // History tab visible to ALL roles
-  id('tab-hist').style.display='flex';
-  // Compare tab: manager and admin only
-  if(['admin','manager'].includes(ROLE)){ id('tab-cmp').style.display='flex'; }
-  // Admin panel: admin only
-  if(ROLE==='admin'){ id('tab-adm').style.display='flex'; loadUsers(); }
+  id('hname').textContent='DVS International';
+  // Show all tabs
+  ['tab-hist','tab-cmp','tab-adm'].forEach(t=>{ const el=id(t); if(el) el.style.display='flex'; });
   subscribe(); renderTable(); recalc();
-  toast(`Welcome — signed in as ${ROLE}`,'ok');
 }
 
 // ── FIRESTORE SYNC ──
@@ -619,11 +555,11 @@ async function saveInv(){
   const c=calc(); const pay=c.tTT+c.tGP+c.hl+gn('s_dc');
   const rec={
     invoice_number:num, saved_at:serverTimestamp(),
-    saved_by:CU.uid, saved_by_email:CU.email,
-    status:ROLE==='staff'?'pending':'approved',
+    saved_by:'local', saved_by_email:'DVS International',
+    status:'approved',
     exporter:v('s_exp'),importer:v('s_imp'),origin:v('s_ori'),bol:v('s_bol'),
     currency:v('s_cur'),fx:gn('s_fx'),mk:gn('s_mk'),gst:gn('s_gst'),tt:gn('s_tt'),
-    dc:gn('s_dc'),fr:gn('s_fr'),ph:gn('s_ph'),ag:gn('s_ag'),dl:gn('s_dl'),
+    dc:gn('s_dc'),fr:gn('s_fr'),ph:gn('s_ph'),ag:gn('s_ag'),dl:gn('s_dl'),inv_eur:gn('s_inv_eur'),fr_usd:gn('s_fr_usd'),
     rows:JSON.parse(JSON.stringify(ROWS)),
     totals:{cifSCR:c.tCIF,cifFX:c.tFX,tt:c.tTT,gb:c.tGB,gp:c.tGP,mrp:c.tMRP,pay,hl:c.hl,n:ROWS.length}
   };
@@ -657,7 +593,7 @@ function loadInv(inv){
   ['s_inv','s_exp','s_imp','s_ori','s_bol'].forEach((f,i)=>{ const vals=[inv.invoice_number||'',inv.exporter||'',inv.importer||'',inv.origin||'',inv.bol||'']; id(f).value=vals[i]; });
   id('s_cur').value=inv.currency||'EUR'; id('s_fx').value=inv.fx||18;
   id('s_mk').value=inv.mk||30; id('s_gst').value=inv.gst||15; id('s_tt').value=inv.tt||0;
-  id('s_dc').value=inv.dc||25; id('s_fr').value=inv.fr||0;
+  id('s_dc').value=inv.dc||25; id('s_fr').value=inv.fr||0; id('s_inv_eur').value=inv.inv_eur||0; id('s_fr_usd').value=inv.fr_usd||0;
   id('s_ph').value=inv.ph||500; id('s_ag').value=inv.ag||800; id('s_dl').value=inv.dl||300;
   let rid=RID; ROWS=(inv.rows||[]).map(r=>({...r,id:++rid})); RID=rid;
   AI_ON=false; id('aibadge').style.display='none';
@@ -691,8 +627,15 @@ async function runAI(){
   setAiMsg('load','Reading document…');
   const sys=`Expert customs document reader for DVS International Seychelles (Kärcher dealer).
 Extract ALL data. Return ONLY valid JSON — no markdown, no explanation:
-{"shipment":{"invoice_number":null,"exporter":null,"importer":null,"currency":null,"exchange_rate":null,"origin_country":null,"bol_number":null},"items":[{"line":1,"hs_code":null,"description":"","qty":1,"unit":"pcs","origin":null,"unit_price_fx":0,"cif_per_unit_fx":0,"cif_value_scr":null,"discount_pct":0,"concession_tax_rate":0,"trades_tax_rate":0,"markup_pct":0.3,"gst_rate":0.15,"max_retail_price":null}]}
-Rules: extract every line. Seychelles BOE CIF column is already in SCR. All rates as decimals (0.3=30%). Defaults: markup_pct=0.3, gst_rate=0.15.`;
+{"shipment":{"invoice_number":null,"exporter":null,"importer":null,"currency":null,"exchange_rate":null,"origin_country":null,"bol_number":null,"freight_usd":null,"invoice_total_eur":null},"items":[{"line":1,"hs_code":null,"description":"","qty":1,"unit":"pcs","origin":null,"unit_price_fx":0,"total_line_eur":0,"cif_value_scr":null,"discount_pct":0,"concession_tax_rate":0,"trades_tax_rate":0,"markup_pct":0.3,"gst_rate":0.15,"max_retail_price":null}]}
+Rules:
+- Extract EVERY line item without exception
+- total_line_eur = the total EUR value for that line (qty × unit price)
+- For Kärcher invoices: unit_price_fx = unit price, total_line_eur = line total
+- invoice_total_eur = grand total of invoice in EUR
+- freight_usd = freight/shipping total in USD if present (from separate freight invoice)
+- Seychelles BOE: CIF column is already in SCR if present
+- All rates as decimals (0.3=30%). Defaults: markup_pct=0.3, gst_rate=0.15, others=0.`;
   try{
     let content;
     if(FILE_TYPE==='pdf') content=[{type:"document",source:{type:"base64",media_type:"application/pdf",data:FILE_B64}},{type:"text",text:"Extract all items. JSON only."}];
@@ -715,7 +658,10 @@ Rules: extract every line. Seychelles BOE CIF column is already in SCR. All rate
     if(s.exchange_rate&&s.exchange_rate>0) id('s_fx').value=s.exchange_rate;
     if(p.items&&p.items.length){
       let rid=RID;
-      ROWS=p.items.map(item=>({id:++rid,hs:item.hs_code||'',desc:item.description||'',qty:item.qty||1,unit:item.unit||'pcs',ori:(item.origin||s.origin_country||'EU').slice(0,2).toLowerCase(),up:item.unit_price_fx||0,cif:item.cif_per_unit_fx||0,disc:(item.discount_pct||0)*100,cifSCR:item.cif_value_scr||null,con:(item.concession_tax_rate||0)*100,tt:(item.trades_tax_rate||0)*100,mk:(item.markup_pct||0.3)*100,gr:(item.gst_rate||0.15)*100,mrpOv:item.max_retail_price||null}));
+      ROWS=p.items.map(item=>({id:++rid,hs:item.hs_code||'',desc:item.description||'',qty:item.qty||1,unit:item.unit||'pcs',ori:(item.origin||s.origin_country||'EU').slice(0,2).toLowerCase(),up:item.unit_price_fx||0,cifEUR:item.total_line_eur||null,cif:item.cif_per_unit_fx||0,disc:(item.discount_pct||0)*100,cifSCR:item.cif_value_scr||null,con:(item.concession_tax_rate||0)*100,tt:(item.trades_tax_rate||0)*100,mk:(item.markup_pct||0.3)*100,gr:(item.gst_rate||0.15)*100,mrpOv:item.max_retail_price||null}));
+      // Auto-populate shipment header totals if available
+      if(sh.invoice_total_eur&&sh.invoice_total_eur>0) id('s_inv_eur').value=sh.invoice_total_eur;
+      if(sh.freight_usd&&sh.freight_usd>0) id('s_fr_usd').value=sh.freight_usd;
       RID=rid; AI_ON=true; id('aibadge').style.display='inline-flex';
       setAiMsg('ok',`${ROWS.length} items extracted successfully`);
       renderTable(); recalc();
@@ -735,7 +681,11 @@ function setAiMsg(type,msg){
 function calc(){
   const fx=gn('s_fx'),fr=gn('s_fr'),ph=gn('s_ph'),ag=gn('s_ag'),dl=gn('s_dl');
   const cifMap={};let totFX=0;
-  ROWS.forEach(r=>{const cFX=r.qty*(r.up*(1-r.disc/100)+r.cif);cifMap[r.id]=r.cifSCR||(cFX*fx);totFX+=cFX});
+  ROWS.forEach(r=>{
+    const cFX=r.cifEUR!=null&&r.cifEUR>0 ? r.cifEUR : r.qty*(r.up*(1-r.disc/100)+r.cif);
+    cifMap[r.id]=r.cifSCR||(cFX*fx);
+    totFX+=cFX;
+  });
   const sumSCR=Object.values(cifMap).reduce((a,b)=>a+b,0);
   const rc=ROWS.map(r=>{
     const c=cifMap[r.id],frSh=sumSCR>0?(c/sumSCR)*fr:0,cif=c+frSh;
@@ -788,6 +738,7 @@ function renderTable(){
       <td><input type="number" value="${r.up||0}" style="width:78px" oninput="ur(${r.id},'up',+this.value)"></td>
       <td><input type="number" value="${r.cif||0}" style="width:65px" oninput="ur(${r.id},'cif',+this.value)"></td>
       <td><input type="number" value="${r.disc||0}" style="width:38px" oninput="ur(${r.id},'disc',+this.value)"></td>
+      <td><input type="number" value="${r.cifEUR!=null?r.cifEUR:''}" placeholder="auto" style="width:82px;background:#FFF8E1" oninput="ur(${r.id},'cifEUR',this.value===''?null:+this.value)"></td>
       <td class="cc em" id="cc_${r.id}">${f2(cr.cif)}</td>
       <td><input type="number" value="${r.con||0}" style="width:38px" oninput="ur(${r.id},'con',+this.value)"></td>
       <td class="cc" id="ct_${r.id}">${f2(cr.tt)}</td>
@@ -817,10 +768,9 @@ function renderHist(){
   if(!HIST.length){area.innerHTML='<div class="hempty"><div class="ei">📁</div><p style="font-size:13px">No invoices saved yet.<br>Fill the calculator and click <strong>Save Invoice</strong>.</p></div>';return;}
   const scr=n=>'SCR '+Math.round(n||0).toLocaleString('en');
   area.innerHTML=HIST.map(inv=>{
-    const isOwn=inv.saved_by===CU?.uid;
-    const canEdit=ROLE!=='staff'||isOwn;
-    const canApprove=['admin','manager'].includes(ROLE)&&inv.status!=='approved';
-    const canDel=ROLE==='admin';
+    const canEdit=true;
+    const canApprove=false;
+    const canDel=true;
     const saved=inv.saved_at?.toDate?inv.saved_at.toDate().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
     const stcls={approved:'st-approved',pending:'st-pending',draft:'st-draft'}[inv.status]||'st-draft';
     return `<div class="hcard">
@@ -899,37 +849,60 @@ async function updateRole(uid,role){await updateDoc(doc(fdb,'users',uid),{role})
 
 // ── EXCEL EXPORT ──
 function buildExcelData(inv){
-  const rr=inv?inv.rows:ROWS; const fxR=inv?inv.fx:gn('s_fx'); const cur=inv?inv.currency:v('s_cur');
+  const rr=inv?inv.rows:ROWS;
+  const fxR=inv?inv.fx:gn('s_fx');
+  const cur=inv?inv.currency:v('s_cur');
+  const invEUR=inv?inv.inv_eur:gn('s_inv_eur');
+  const frUSD=inv?inv.fr_usd:gn('s_fr_usd');
+  const frEUR=fxR>0?frUSD*gn('s_fx')/fxR:0;
+  const totCIF_EUR=invEUR+frEUR;
+  const totCIF_SCR=totCIF_EUR*fxR;
   const rows=[
     ['DVS INTERNATIONAL COMPANY LIMITED'],
     ['Authorised Kärcher Dealer & Service Centre | Dekk House, Providence Industrial Estate, Mahe, Seychelles'],
     ['SEYCHELLES CUSTOMS — BILL OF ENTRY CALCULATION SHEET'],[''],
-    [`Invoice No: ${inv?.invoice_number||v('s_inv')||''}`,``,``,`Date: ${new Date().toLocaleDateString('en-GB')}`],
-    [`Exporter: ${inv?.exporter||v('s_exp')||''}`,``,``,`Importer: ${inv?.importer||v('s_imp')||''}`],
-    [`Origin: ${inv?.origin||v('s_ori')||''}`,``,``,`Currency: ${cur}   Rate: 1 ${cur} = ${fxR} SCR`],[''],
-    ['#','HS Code','Description','Qty','Unit','Origin','Unit Price (FX)','CIF/unit (FX)','Disc%','CIF Value (SCR)','Con%','Trades Tax (SCR)','Markup%','GST Base (SCR)','GST%','GST Pay (SCR)','Max Retail Price (SCR)']
+    [`Invoice No: ${inv?.invoice_number||v('s_inv')||''}`,'','',`Date: ${new Date().toLocaleDateString('en-GB')}`],
+    [`Exporter: ${inv?.exporter||v('s_exp')||''}`,'','',`Importer: ${inv?.importer||v('s_imp')||''}`],
+    [`Origin: ${inv?.origin||v('s_ori')||''}`,'','',`Currency: ${cur}   Rate: 1 ${cur} = ${fxR} SCR`],
+    [`Total CIF (EUR): ${totCIF_EUR.toFixed(2)}`,'','',`Total CIF (SCR): ${totCIF_SCR.toFixed(2)}`],[''],
+    ['#','HS Code','Description','Qty','Unit','Origin','CIF Value (EUR)','CIF Value (SCR)','Con%','Conc.Tax (SCR)','App.Tax%','Trades Tax (SCR)','Markup%','GST Base (SCR)','GST%','GST Pay (SCR)','Max Retail (SCR)']
   ];
-  let totCIF=0,totTT=0,totGB=0,totGP=0,totMRP=0;
+  let totCIFe=0,totCIFs=0,totTT=0,totGB=0,totGP=0,totMRP=0;
   rr.forEach((r,i)=>{
-    const cFX=r.qty*(r.up*(1-r.disc/100)+r.cif);const cSCR=r.cifSCR||(cFX*fxR);
+    const cFX=r.cifEUR!=null&&r.cifEUR>0?r.cifEUR:(r.qty*(r.up*(1-r.disc/100)+r.cif));
+    const cSCR=r.cifSCR||(cFX*fxR);
     const con=cSCR*(r.con/100);const tt=(cSCR-con)*(r.tt/100);
     const gb=(cSCR+tt)*(1+r.mk/100);const gp=gb*(r.gr/100);const mrp=r.mrpOv||(gb+gp);
-    totCIF+=cSCR;totTT+=tt;totGB+=gb;totGP+=gp;totMRP+=mrp;
-    rows.push([i+1,r.hs||'',r.desc||'',r.qty,r.unit||'',r.ori||'',+r.up,+r.cif,+r.disc,+cSCR.toFixed(2),+r.con,+tt.toFixed(2),+r.mk,+gb.toFixed(2),+r.gr,+gp.toFixed(2),+mrp.toFixed(2)]);
+    totCIFe+=cFX;totCIFs+=cSCR;totTT+=tt;totGB+=gb;totGP+=gp;totMRP+=mrp;
+    rows.push([i+1,r.hs||'',r.desc||'',r.qty,r.unit||'',r.ori||'',
+      +cFX.toFixed(2),+cSCR.toFixed(2),+(r.con/100).toFixed(4),
+      +con.toFixed(2),+(r.tt/100).toFixed(4),+tt.toFixed(2),+(r.mk/100).toFixed(4),
+      +gb.toFixed(2),+(r.gr/100).toFixed(4),+gp.toFixed(2),+mrp.toFixed(2)]);
   });
-  const ph=inv?inv.ph:gn('s_ph'),ag2=inv?inv.ag:gn('s_ag'),dl=inv?inv.dl:gn('s_dl'),dc=inv?inv.dc:gn('s_dc');
-  const pay=totTT+totGP+(ph||0)+(ag2||0)+(dl||0)+(dc||0);
-  rows.push(['','','TOTALS','','','','','','',+totCIF.toFixed(2),'',+totTT.toFixed(2),'',+totGB.toFixed(2),'',+totGP.toFixed(2),+totMRP.toFixed(2)],[],
-    ['SUMMARY'],['Total CIF (SCR)',+totCIF.toFixed(2)],['Total Trades Tax (SCR)',+totTT.toFixed(2)],
-    ['Total GST Payable (SCR)',+totGP.toFixed(2)],['Port & Handling (SCR)',+(ph+ag2+dl).toFixed(2)],
-    ['Document Charge (SCR)',+(dc).toFixed(2)],['TOTAL PAYABLE ON BOE (SCR)',+pay.toFixed(2)],[],
+  const dc=inv?inv.dc:gn('s_dc');
+  const pay=totTT+totGP+(dc||0);
+  rows.push(['','','TOTALS','','','',+totCIFe.toFixed(2),+totCIFs.toFixed(2),'',
+    '','',' ',+totTT.toFixed(2),'',+totGB.toFixed(2),'',+totGP.toFixed(2),+totMRP.toFixed(2)],[],
+    ['BOE SUMMARY'],
+    ['Kärcher Invoice Total (EUR)',+invEUR.toFixed(2)],
+    ['Freight Total (USD)',+frUSD.toFixed(2)],
+    ['Freight Converted (EUR)',+frEUR.toFixed(2)],
+    ['TOTAL CIF (EUR)',+totCIF_EUR.toFixed(2)],
+    ['Exchange Rate (EUR→SCR)',+fxR],
+    ['TOTAL CIF (SCR)',+totCIF_SCR.toFixed(2)],[''],
+    ['Trades Tax Payable (SCR)',+totTT.toFixed(2)],
+    ['GST Payable (SCR)',+totGP.toFixed(2)],
+    ['Document Charge (SCR)',+(dc||0)],
+    ['TOTAL PAYABLE ON BOE (SCR)',+pay.toFixed(2)],[''],
+    ['Total GST Base (SCR)',+totGB.toFixed(2)],
+    ['Total GST Payable (SCR)',+totGP.toFixed(2)],
     ['TOTAL MAX RETAIL PRICE (SCR)',+totMRP.toFixed(2)]);
   return rows;
 }
 function exportExcel(inv){
   const wb=window.XLSX.utils.book_new();
   const ws=window.XLSX.utils.aoa_to_sheet(buildExcelData(inv||null));
-  ws['!cols']=[{wch:4},{wch:12},{wch:36},{wch:6},{wch:7},{wch:7},{wch:13},{wch:12},{wch:7},{wch:15},{wch:7},{wch:14},{wch:8},{wch:15},{wch:7},{wch:13},{wch:16}];
+  ws['!cols']=[{wch:4},{wch:13},{wch:38},{wch:5},{wch:5},{wch:6},{wch:13},{wch:14},{wch:7},{wch:13},{wch:8},{wch:14},{wch:8},{wch:14},{wch:7},{wch:14},{wch:16}];
   window.XLSX.utils.book_append_sheet(wb,ws,'BOE Calculator');
   const label=(inv?.invoice_number||v('s_inv')||'export').replace(/[^a-zA-Z0-9-]/g,'_');
   window.XLSX.writeFile(wb,`DVS_BOE_${label}_${new Date().toISOString().slice(0,10)}.xlsx`);
