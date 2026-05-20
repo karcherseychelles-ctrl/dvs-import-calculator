@@ -43,25 +43,25 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* ─── LOGIN ─── */
-#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--navy) 0%,#1e4fa3 100%);padding:20px}
-.lcard{background:#fff;border-radius:18px;padding:42px 36px;width:380px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.28);animation:fadein .3s ease}
-.llogo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center}
-.lbadge{background:var(--yellow);color:var(--navy);font-weight:700;font-size:17px;padding:5px 13px;border-radius:7px;letter-spacing:.3px}
-.ltitle{font-size:21px;font-weight:700;color:var(--navy)}
-.lsub{text-align:center;font-size:12px;color:var(--txt3);margin-bottom:22px;line-height:1.5}
-.lfield{margin-bottom:15px}
+
+
+
+
+
+
+
 .lfield label{display:block;font-size:10.5px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
-.lerr{background:var(--redbg);color:var(--red);border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:14px;display:none;align-items:center;gap:7px}
-.lbtn{width:100%;padding:11px;font-size:14px;justify-content:center;margin-top:6px;border-radius:9px}
-.lfooter{text-align:center;font-size:11px;color:var(--txt3);margin-top:18px;line-height:1.6}
-.ldivider{display:flex;align-items:center;gap:10px;margin:14px 0}
+
+
+
+
 .ldivider span{font-size:11px;color:var(--txt3);white-space:nowrap}
 .ldivider::before,.ldivider::after{content:'';flex:1;height:1px;background:var(--brd)}
-.gbtn{width:100%;padding:11px;font-size:13px;justify-content:center;border-radius:9px;background:#fff;color:#3c4043;border:1px solid var(--brd);font-weight:500;margin-top:0;gap:10px;cursor:pointer;transition:background .15s}
+
 .gbtn:hover{background:var(--bg2)}
 
 /* ─── APP ─── */
-#appWrap{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#appWrap{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 header{background:var(--navy);height:54px;display:flex;align-items:center;gap:11px;padding:0 22px;flex-shrink:0;box-shadow:0 2px 12px rgba(27,58,107,.32);z-index:200}
 .hbadge{background:var(--yellow);color:var(--navy);font-weight:700;font-size:11px;padding:3px 8px;border-radius:5px}
 header h1{color:#fff;font-size:14px;font-weight:600;letter-spacing:-.2px}
@@ -247,29 +247,6 @@ tr.tot-row td.mrp{background:#102040;color:#fff}
 </style>
 </head>
 <body>
-
-<!-- ══ LOGIN ══ -->
-<div id="loginWrap">
-  <div class="lcard">
-    <div class="llogo"><span class="lbadge">DVS</span><span class="ltitle">Staff Portal</span></div>
-    <div class="lsub">DVS International Company Limited<br>Authorised Kärcher Dealer · Seychelles</div>
-    <div class="lerr" id="lerr">⚠ <span id="lerrMsg"></span></div>
-    <div class="lfield"><label>Email Address</label><input type="email" id="lemail" placeholder="staff@dvsinternational.sc" onkeydown="if(event.key==='Enter')login()"></div>
-    <div class="lfield"><label>Password</label><input type="password" id="lpass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"></div>
-    <button class="bn lbtn" onclick="login()" id="lbtn">Sign In →</button>
-    <div class="ldivider"><span>or</span></div>
-    <button class="gbtn" onclick="loginGoogle()" id="gbtn">
-      <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      Sign in with Google
-    </button>
-    <div class="lfooter">Use your company Gmail account to sign in<br>New staff? Ask your admin to set your role after first login</div>
-  </div>
-</div>
 
 <!-- ══ APP ══ -->
 <div id="appWrap">
@@ -528,9 +505,9 @@ ROLE='admin'; CU={uid:'local',email:'DVS International'};
 window.addEventListener('load', showApp);
 function logout(){ if(UNSUB)UNSUB(); location.reload(); }
 
-function showLogin(){ id('loginWrap').style.display='flex'; id('appWrap').style.display='none'; }
+
 function showApp(){
-  id('loginWrap').style.display='none'; id('appWrap').style.display='flex';
+  
   id('hname').textContent='DVS International';
   // Show all tabs
   ['tab-hist','tab-cmp','tab-adm'].forEach(t=>{ const el=id(t); if(el) el.style.display='flex'; });
